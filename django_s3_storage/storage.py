@@ -93,9 +93,16 @@ class S3File(File):
             self.file = self._storage.open(self.name, mode).file
         return super().open(mode)
 
+    
+class _LocalSession(local):
+    def __init__(self):
+        self.session = boto3.session.Session()
+        
+        
+local_session = _LocalSession()
+
 
 class _Local(local):
-
     """
     Thread-local connection manager.
 
@@ -117,8 +124,7 @@ class _Local(local):
             connection_kwargs["aws_session_token"] = storage.settings.AWS_SESSION_TOKEN
         if storage.settings.AWS_S3_ENDPOINT_URL:
             connection_kwargs["endpoint_url"] = storage.settings.AWS_S3_ENDPOINT_URL
-        self.session = boto3.session.Session()
-        self.s3_connection = self.session.client(
+        self.s3_connection = local_session.session.client(
             "s3",
             config=Config(
                 s3={"addressing_style": storage.settings.AWS_S3_ADDRESSING_STYLE},
